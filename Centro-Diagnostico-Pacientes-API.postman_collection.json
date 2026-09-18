@@ -1,0 +1,319 @@
+{
+	"info": {
+		"_postman_id": "6f1b2a3c-2b9a-4b0e-9d3a-centro-diagnostico-tp4",
+		"name": "Centro Diagnostico - Pacientes API",
+		"description": "Colección de pruebas para /api/pacientes: casos de éxito (listar, crear, buscar por id) y casos de fallo de validación (@Valid) y de recurso no encontrado, con asserts de status code y de forma del body de error.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01 - GET listar pacientes (vacio o con datos)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code es 200 OK', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('El body es un array', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(Array.isArray(body)).to.be.true;",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/pacientes",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "pacientes"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "02 - POST crear paciente (caso de exito -> 201)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code es 201 Created', function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('El body devuelve el paciente creado con id asignado', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body).to.have.property('id');",
+							"    pm.expect(body.id).to.not.be.null;",
+							"    pm.expect(body.nombre).to.eql('Juan Pérez');",
+							"    pm.expect(body.email).to.eql('juan.perez@example.com');",
+							"    pm.expect(body.edad).to.eql(34);",
+							"});",
+							"",
+							"pm.test('Header Location presente', function () {",
+							"    pm.response.to.have.header('Location');",
+							"});",
+							"",
+							"if (pm.response.code === 201) {",
+							"    const body = pm.response.json();",
+							"    pm.collectionVariables.set('pacienteIdCreado', body.id);",
+							"}"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"Juan Pérez\",\n    \"email\": \"juan.perez@example.com\",\n    \"edad\": 34\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/pacientes",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "pacientes"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "03 - GET paciente por id (caso de exito -> 200)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code es 200 OK', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Devuelve el paciente esperado', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.id).to.eql(parseInt(pm.collectionVariables.get('pacienteIdCreado')));",
+							"    pm.expect(body).to.have.property('nombre');",
+							"    pm.expect(body).to.have.property('email');",
+							"    pm.expect(body).to.have.property('edad');",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/pacientes/{{pacienteIdCreado}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "pacientes", "{{pacienteIdCreado}}"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "04 - GET paciente por id inexistente (caso de fallo -> 404)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code es 404 Not Found', function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"",
+							"pm.test('El body de error tiene la forma esperada', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.status).to.eql(404);",
+							"    pm.expect(body.error).to.eql('Not Found');",
+							"    pm.expect(body).to.have.property('message');",
+							"    pm.expect(body).to.have.property('path');",
+							"    pm.expect(body).to.have.property('timestamp');",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/pacientes/999999",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "pacientes", "999999"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "05 - POST crear paciente - nombre invalido (caso de fallo -> 400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code es 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test('Devuelve el detalle del error de validacion en \"nombre\"', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.status).to.eql(400);",
+							"    pm.expect(body.errores).to.have.property('nombre');",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"J\",\n    \"email\": \"juan.perez@example.com\",\n    \"edad\": 34\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/pacientes",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "pacientes"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "06 - POST crear paciente - email invalido (caso de fallo -> 400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code es 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test('Devuelve el detalle del error de validacion en \"email\"', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.status).to.eql(400);",
+							"    pm.expect(body.errores).to.have.property('email');",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"Juan Pérez\",\n    \"email\": \"esto-no-es-un-email\",\n    \"edad\": 34\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/pacientes",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "pacientes"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "07 - POST crear paciente - edad invalida (caso de fallo -> 400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code es 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test('Devuelve el detalle del error de validacion en \"edad\"', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.status).to.eql(400);",
+							"    pm.expect(body.errores).to.have.property('edad');",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"Juan Pérez\",\n    \"email\": \"juan.perez@example.com\",\n    \"edad\": -5\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/pacientes",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "pacientes"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "08 - POST crear paciente - todos los campos invalidos (caso de fallo -> 400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Status code es 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test('Devuelve error de validacion para nombre, email y edad', function () {",
+							"    const body = pm.response.json();",
+							"    pm.expect(body.status).to.eql(400);",
+							"    pm.expect(body.errores).to.have.property('nombre');",
+							"    pm.expect(body.errores).to.have.property('email');",
+							"    pm.expect(body.errores).to.have.property('edad');",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"\",\n    \"email\": \"no-valido\",\n    \"edad\": null\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/pacientes",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "pacientes"]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [],
+	"variable": [
+		{ "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+		{ "key": "pacienteIdCreado", "value": "", "type": "string" }
+	]
+}
